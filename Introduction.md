@@ -2,7 +2,7 @@ Welcome! This GitHub repository contains documents related to my Master Thesis w
 
 *"Models of Migration Time and Refugee Well-being - Applying Causal Inference, Event History Analysis and Deep Learning to the IAB-BAMF-SOEP Survey of Refugees in Germany"*. 
 
-If you have any questions or would like to read the main text of my thesis, please send me an email: timfingerhut at gmail.com. 
+If you have any questions or would like to read the main text of my thesis, please send me an email: timfingerhut@gmail.com. 
 
 Let me summarize what you can and cannot find here: 
 
