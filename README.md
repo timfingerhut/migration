@@ -16,4 +16,4 @@ Let me summarize what you can and cannot find here:
 
 5) **Map Data**: I created Map 1 using [Heatmapper](http://www2.heatmapper.ca). I uploaded the raw data of the number of Syrian respondents by region to the Map Data folder. 
 
-6) **STATA Code**: This path contains the STATA Do-File. It contains all the relevant code for Kaplan-Meier estimates, Cox regressions, data preprocessing and normalization as well as the various statistical tests implemented in the thesis.
+6) **STATA Code**: This path contains the STATA Do-File. It contains the relevant code for Kaplan-Meier estimates, Cox regressions, data preprocessing and normalization as well as the various statistical tests implemented in the thesis.
