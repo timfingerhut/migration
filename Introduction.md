@@ -10,7 +10,7 @@ Let me summarize what you can and cannot find here:
 
 2) **DeepSurv**: You can find the Python notebook used for the DeepSurv application on this path. I also uploaded the PDF output for convenience. 
 
-3) **Hyperparameter Tuning**: As described in the thesis, I followed a four-step manual hyperparameter tuning procedure. Files on this path document the hyperparameter tuning. For an example of an implemented random hyperparameter search for DeepSurv, please [Jared Lee Katzman's DeepSurv repository](https://github.com/jaredleekatzman/DeepSurv/tree/master/hyperparam_search). 
+3) **Hyperparameter Tuning**: As described in the thesis, I followed a four-step manual hyperparameter tuning procedure. Files on this path document the hyperparameter tuning. For an example of an implemented random hyperparameter search for DeepSurv, please have a look at [Jared Lee Katzman's DeepSurv repository](https://github.com/jaredleekatzman/DeepSurv/tree/master/hyperparam_search). 
 
 4) **Map Data**: I created Map 1 using [Heatmapper](http://www2.heatmapper.ca). I uploaded the raw data of the number of Syrian respondents by region to the Map Data folder. 
 
