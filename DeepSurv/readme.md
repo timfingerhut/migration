@@ -1,0 +1,1 @@
+GitHub renders Python notebooks as static html files. Therefore, the markup does not visualize correctly. You can either open a local copy in Jupyter Notebook or look up the notebook online on [Jupyter's nbviewer](https://github.com/timfingerhut/migration/blob/master/DeepSurv/DeepSurv_FINAL.ipynb). 
