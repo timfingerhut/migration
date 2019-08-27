@@ -1,7 +1,7 @@
 * Tim Fingerhut (timfingerhut@gmail.com)
 * Master Thesis 2019
 * Freie Universität Berlin
-* Last changed on: 31.07.2019
+* Last changed on: 27.08.2019
 * Data: IAB-BAMF-SOEP Survey of Refugees in Germany - M3 Sample.
 
 
@@ -9,11 +9,11 @@
 
 Contents (Lines of Code in Do-File)
 
-Part 1. Data Preparation: Recoding Variables (Lines 23 - 1093)
-Part 2. Data Imputation (Lines 1094 - 1299)
-Part 3. Data Normalization for DeepSurv (Lines 1300 - 1623)
+Part 1. Data Preparation: Recoding Variables (Lines 23 - 1100)
+Part 2. Data Imputation (Lines 1101 - 1308)
+Part 3. Data Normalization for DeepSurv (Lines 1309 - 1634)
 Part 4. Data Analysis: Event History Method, including Kaplan-Meier Estimates, 
-Cox Regressions and tests such as ttest, PH test (Lines 1624 - 1813)
+Cox Regressions and tests such as ttest, PH test and LRT test (Lines 1635 - 1810)
 
 =============================================================================*/ 
 
@@ -28,20 +28,21 @@ Cox Regressions and tests such as ttest, PH test (Lines 1624 - 1813)
 
 use "/Users/timfingerhut/Documents/FU Berlin 2019/0_Masterarbeit/Code/bgp_refugees_master.dta"
 
-/* The two key dependent variables in event history analysis are time duration 
-and so-called "failure". In this dataset, all surveyed people arrived in
-Germany. Therefore, no cases were "right-censored". The event of interest 
-(= arrival in Germany) took place for every surveyed individual. We therefore 
-set the failure variable to 0 for all individauls. */
+/* Two key variables in event history analysis are time duration and the so-called 
+"failure" indicator. In this dataset, all surveyed people arrived in
+Germany. Therefore, there is no right censoring, which means that the failure 
+indicator is equal to 1 for all cases since the event of interest, arrival in 
+Germany, took place for every surveyed individual. I therefore 
+set the failure variable to 1 for all individauls. */
 
-* Dependent variables: migration duration and right censoring 
+* Dependent variables: migration duration and failure indicator
 
-gen dur = bgpr_l_27 if bgpr_l_27 > 0
+gen dur = bgpr_l_27 if bgpr_l_27 > 0 
 gen fail_1 = 1 
 
-* Explanatory variables (I consistenly numbered explanatory variables)
+* Explanatory variables (I consistently number explanatory variables)
 
-* 1) gender: Male will be coded as "0". Female is coded as "1". 
+* 1) gender: Male is coded as "0". Female is coded as "1". 
 
 gen gender = bgpr_l_0101
 recode gender 1 = 0
@@ -57,7 +58,8 @@ tab gender
 
 gen birth_yr = bgpr_l_0103 if bgpr_l_0103 > 0
 gen age = 2019 - birth_yr
-* The youngest person in the dataset is 21 years old. The oldest 86. Mean age is 36,6 years. 
+* The youngest person in the dataset is 21 years old. The oldest 86. 
+* Mean age is 36,6 years. 
 
 * 3) citizenship 
 
@@ -71,9 +73,9 @@ clonevar birth_country = country_of_birth
 label define birth_country 1 "Afghanistan" 2 "Albania" 4 "Armenia" 5 "Bosnia and Herzegowina" 6 "Eritrea" 7 "Gambia" 8 "Georgia" 9 "India" 10 "Iraq" 11 "Iran" 12 "Kosovo" 13 "Macedonia" 14 "Nigeria" 15 "Pakistan" 16 "Russian Federation" 17 "Serbia" 18 "Somalia" 19 "Syria" 20 "Ukraine" 21 "Other country"
 label values birth_country birth_country
 
-* I export the regional data for Afghanistan, Iraq, Eritrea and Syria, the
-* most common countries of birth of people in the dataset. Only the regional
-* variable for Syria will be used later in the analysis.
+* I create a variable indicating the home region of a person or Afghanistan, 
+* Iraq, Eritrea and Syria, which are the most common countries in the dataset.
+* Later on, I will construct the 'km' variable using this information. 
 
 * 5) region_afghanistan
 
@@ -99,14 +101,13 @@ clonevar immigration_country = bgpr_l_06
 * 10) return_year
 
 clonevar return_year = bgpr_l01_0901
-* only 1% of people in the dataset returned to their country of birth or another country. Most before 2015. 
-
+* only 1% of people in the dataset returned to their country of birth or another
+* country. Most did so before 2015. 
 
 * 11) exp_savings: sustained livelihood with savings 
 
 clonevar exp_savings = bgpr_l_1701 
 recode exp_savings -2 = 0
-
 
 * 12) exp_income: sustained livelihood with work income 
 
@@ -170,7 +171,7 @@ recode friends_left -2 = 0
 clonevar other_reasons = bgpr_l_2510
 recode other_reasons -2 = 0
 
-* 27) answers_questions_experiences: people who answered questions about flight experiences - 0 "No" & 1 "Yes" 
+* 27) answers_questions_experiences: answered questions about negative experiences?
 clonevar answers_questions_experiences = bgpr_l_28
 recode answers_questions_experiences 2 = 0
 recode answers_questions_experiences -1 = .
@@ -179,21 +180,27 @@ label define answers 0 "No" 1 "Yes"
 label values answers_questions_experiences answers
 tab answers_questions_experiences 
 
-* 28) car: used car as transportation 
+/* The coding procedure is a little different below, because we have to recognize
+the fact that 1/3 of respondents chose not to answer questions related to the 
+negative experiences and modes of transport. This means that I have to 
+distinguish between two different types of the answer "not applicable" (coded -2). 
 
-/* The coding procedure is a little different here, because we have to recognize the fact that 1/3 of respondents
-chose not to answer questions related to the negative experiences and modes of transport. Therefore, we have to 
-distinguish the answer "not applicable" (coded -2) in the original dataset for those who answered the questions
-and those who did not. For example, if someone answered the questions but the answer is not applicable, he or she
-did not use "car" as a modes of transportation. If the answer is "not applicable" and the person chose not to
-answer the questions about the flight experiences, then the person simply did not answer the question and therefore
-one has to code this answer as a mising value.*/
+In the first case, a respondent did answer the questions. If the answer is -2 
+('not applicable'), this means that this individual did not travel by a given
+means of transport.
+
+In the second case, a respondent chose not to answer the questions. The answer -2 
+('not applicable') means that he or she was not even asked the question. This 
+response should therefore be treated as as missing value, which will later 
+be replaced in the data imputation procedure.*/
+
+* 28) car: used car as transportation 
 
 gen car=.
 replace car=0 if answers_questions_experiences == 1
 replace car = bgpr_l_2801 if bgpr_l_2801 > 0
 
-* 29) bus 
+* 29) bus
 
 gen bus=.
 replace bus=0 if answers_questions_experiences == 1
@@ -263,9 +270,6 @@ replace cost_all_helper_smuggler_euro = bgpr_l_3101 if bgpr_l_3101 > 0
 
 gen cost_smuggler_1000 = cost_all_helper_smuggler_euro / 1000
 
-* km1000
-
-gen km1000 = km / 1000
 
 * 40) fin_savings: used savings to finance flight 
  
@@ -364,8 +368,8 @@ replace neg_dummy=0 if no_neg_dummy == 1
 replace neg_dummy=1 if no_neg_dummy == 0
 
 * 56) neg_dummy_based_on_ind_answers 
-* test whether dummy corresponds to indivdual answers about negative experiences
-* the match is not perfect, so another dummy variable is created 
+* I tested whether dummy is identical to aggregated indivdual answers about
+* negative experiences. Since the match is not perfect, I cretae another dummy variable.
 
 gen neg_dummy_test=.
 replace neg_dummy_test=0 if answers_questions_experiences == 1
@@ -379,12 +383,13 @@ replace neg_dummy_test = neg_prison if neg_prison > 0
 rename neg_dummy_test neg_dummy_based_on_ind_answers
 
 tab2 no_neg_dummy neg_dummy_based_on_ind_answers
-/* 39 persons did not report any of the listed negative experience categories, but also would not say that
-they did not make any bad experience. Therefore, I adopt the neg_dummy variable as the better measure, because
-it represents whether an individual thinks he or she has made dangerous negative experiences on the journey */
+/* 39 persons did not report any of the listed negative experience categories, 
+but indicated that they did have a bad experience. Therefore, I adopt the neg_dummy
+variable as the better measure, because it represents whether an individual 
+thinks he or she has made dangerous negative experiences on the journey */
 
 
-* NOTE: every respondents answered the following questions again 
+* NOTE: from here on, every respondent again answered the questions 
 
 * 57) year_arrival_germany 
 
@@ -398,7 +403,6 @@ clonevar month_arrival_germany = bgpr_l_3402 if bgpr_l_3402 > 0
 
 clonevar arrival_alone = bgpr_l_3501
 recode arrival_alone -2 = 0
-
 
 * 60) arrival_with_family
 
@@ -533,8 +537,10 @@ recode whyger_other_reasons -2 = 0
 
 ** the following variables indicate whether a person was supported by people who were already in Germany
 
-* 85) support_family_friends_in_ger: 0 indicates no support, 1 indicates support by persons already in Germany
-** most people had support by family (762 people), followed by friends (101 people) and both (39 people)
+* 85) support_family_friends_in_ger: 0 indicates no support, 1 indicates support 
+* by persons already in Germany
+
+** most people were supported family (762 people), friends (101 people) or both (39 people)
 tab2 bgpr_l_3801 bgpr_l_3802
 
 clonevar support_family_friends_in_ger = bgpr_l_3803
@@ -544,7 +550,6 @@ recode support_family_friends_in_ger -1 -2 = 1
 * 86) mother_tongue 
 
 clonevar mother_tongue = bgpr7201 if bgpr7201 > 0
-
 
 * 87) english: it is considered that a person can speak English if response is "very good"/"good"/"okay" and that he
 * or she cannot speak English if response is "rather bad" or "not at all" 
@@ -564,7 +569,6 @@ recode french 2 3 = 1
 
 label define engl 0 "No" 1 "Yes"
 label values french engl
-
 
 * 89) economic_sector: of the last job
 
@@ -646,7 +650,7 @@ recode theoretical_uni -2 = 0
 clonevar phd = bgpr_l_23206 
 recode phd -2 = 0
 
-* 101) psych_felt_welcomed: at arrival /scale from 1 to 5, the higher, the more a person felt welcomed)
+* 101) psych_felt_welcomed: at arrival, scale from 1 to 5, the higher, the more a person felt welcomed
 
 clonevar psych_felt_welcomed = bgpr326 if bgpr326 > 0
 
@@ -1071,6 +1075,9 @@ recode km (0 = 1824) if bgpr_l_0320==-1
 
 recode km (0 = .) if km==0
 
+* km1000
+
+gen km1000 = km / 1000
 
 * 117) km_per_day: kilometers from home region divided by duration of journey
 * in days 
@@ -1099,11 +1106,12 @@ tab mother_tongue, gen(mother_tongue_imp)
 
 drop if dur == "."
 
-* missing values were replaced by the median value for real-valued features and by the mode for categorical features
+* missing values were replaced by the median value for real-valued features 
+* and by the mode for categorical features
 
-* why median and not mean? to not give too much weight to extreme observations.
+* Why median and not mean? To not give too much weight to extreme observations.
 * For example, maximum cost of transportation is 35000€, but median is 2500€. 
-* The mean of 4800€ would give too much weight to extreme observations at the top of the range. 
+* The mean of 4800€ would give too much weight to extreme outliers. 
 
 sum age, d
 replace age = 37 if missing(age) 
@@ -1111,7 +1119,7 @@ replace age = 37 if missing(age)
 
 tab car
 replace car = 1 if missing(car)
-* 849 changes made 
+* 849 changes made - 33% imputed
 
 tab bus
 replace bus = 1 if missing(bus)
@@ -1147,15 +1155,16 @@ replace transportation_other = 0 if missing(transportation_other)
 
 sum cost_all_transportation_euro, d
 replace cost_all_transportation_euro = 2500 if missing(cost_all_transportation_euro)
-* 1879 changes made
+* 1879 changes made - transportation, accomodation and smuggling were all heavily
+* imputed. More pointed data collection efforts are necessary. Transport 73% imputed
 
 sum cost_all_accomodation_euro, d
 replace cost_all_accomodation_euro = 500 if missing(cost_all_accomodation_euro)
-* 2298 changes made 
+* 2298 changes made - 89% imputed
 
 sum cost_all_helper_smuggler_euro, d
 replace cost_all_helper_smuggler_euro = 4000 if missing(cost_all_helper_smuggler_euro)
-* 2108 changes made 
+* 2108 changes made - 82% imputed
 
 tab fin_savings
 replace fin_savings = 0 if missing(fin_savings) 
@@ -1300,6 +1309,9 @@ replace km = 3423 if missing(km)
 * Part 3 - Data Normalization for DeepSurv 
 
 * ------------------------------------------------------------------------------
+
+* The following code normalizes continuous variables to a 0 to 1 range using
+* the minimum-maximum method with STATA's "norm" package. 
 
 * Install the "norm" package for STATA 
 
@@ -1612,8 +1624,7 @@ clonevar satisfaction_overall_now = bgpr457 if bgpr457 > -1
 rename satisfaction_overall_now satisfaction_now
 norm satisfaction_now, method(mmx)
 
-
-* create csv sheet for Machine Learning Models using Stata "Export" option
+* Export CSV File (for Deep Neural Network)
 ** change end of "export delimited" line to appropriate path on personal computer
 
 export delimited dur fail_1 country1 country2 country3 country4 country5 country6 country7 country8 country9 country10 country11 country12 country13 country14 country15 country16 country17 country18 country19 country20 country21 mmx_km_imp car bus truck train plane ferry small_boat by_foot transportation_other mmx_cost_transport_imp mmx_cost_accomodation_imp mmx_cost_smuggler_imp fin_savings fin_sold_assets fin_casual_work fin_family fin_friends fin_credit fin_other arrival_alone arrival_with_family arrival_with_friends arrival_with_other_persons support_family_friends_in_ger married gender neg_fraud neg_sexual_harassment neg_physical_abuse neg_shipwreck neg_robbery neg_blackmail neg_prison no_neg_dummy mmx_age_imp english french mmx_yearsinschool_imp uni_apprentice_abroad practical_uni theoretical_uni phd religion_islam religion_christianity using "/Users/timfingerhut/Documents/FU Berlin 2019/0_Masterarbeit/Code/master_norm1.csv", nolabel replace
@@ -1654,7 +1665,7 @@ rename country19 Syrian
 
 sts graph, by(Syrian) tmax(365) bgcolor(white) graphregion(color(white))
 
-* Test the equality of the survivor functions for key groups
+* Test the equality of the survivor functions for key groups (Log-rank test)
 
 sts test support_family_friends_in_ger 
 sts test country19
@@ -1681,7 +1692,6 @@ stcurve, haz bgcolor(white) graphregion(color(white))
 stcurve, haz at1(plane = 0) at2(plane = 1)
 
 stcox gender, tvc(gender)
-* gender interacts linearly with time 
 
 * fit cox regression  
 
@@ -1691,29 +1701,19 @@ stcox gender age i.country_of_birth car bus truck train plane ferry small_boat b
 
 estat concordance
 
-
-
-placeholder
-
-* fit cox regression 
-
-stcox gender age i.country_of_birth car bus truck train plane ferry small_boat by_foot transportation_other cost_all_transportation_euro cost_all_accomodation_euro cost_all_helper_smuggler_euro fin_savings fin_sold_assets fin_casual_work fin_family fin_friends fin_credit fin_other neg_fraud neg_sexual_harassment neg_physical_abuse neg_shipwreck neg_robbery neg_blackmail neg_prison no_neg_dummy arrival_alone arrival_with_family arrival_with_friends arrival_with_other_persons english french years_in_school uni_apprentice_abroad practical_uni theoretical_uni phd religion_islam religion_christianity married kids km 
-
-stphtest, d
-
+** Fit cox regressions 
 
 * 27.05.19
 
-stcox gender age i.birth_country car bus truck train plane ferry small_boat by_foot transportation_other cost_all_transportation_euro cost_all_accomodation_euro cost_all_helper_smuggler_euro fin_savings fin_sold_assets fin_casual_work fin_family fin_friends fin_credit fin_other neg_fraud neg_sexual_harassment neg_physical_abuse neg_shipwreck neg_robbery neg_blackmail neg_prison no_neg_dummy arrival_alone arrival_with_family arrival_with_friends arrival_with_other_persons english french years_in_school uni_apprentice_abroad practical_uni theoretical_uni phd religion_islam religion_christianity married km support_family_friends_in_ger 
+* stcox gender age i.birth_country car bus truck train plane ferry small_boat by_foot transportation_other cost_all_transportation_euro cost_all_accomodation_euro cost_all_helper_smuggler_euro fin_savings fin_sold_assets fin_casual_work fin_family fin_friends fin_credit fin_other neg_fraud neg_sexual_harassment neg_physical_abuse neg_shipwreck neg_robbery neg_blackmail neg_prison no_neg_dummy arrival_alone arrival_with_family arrival_with_friends arrival_with_other_persons english french years_in_school uni_apprentice_abroad practical_uni theoretical_uni phd religion_islam religion_christianity married km support_family_friends_in_ger 
 
 * 07.06.19
 
-stcox i.birth_country km car bus truck train plane ferry small_boat by_foot transportation_other cost_all_transportation_euro cost_all_accomodation_euro cost_all_helper_smuggler_euro fin_savings fin_sold_assets fin_casual_work fin_family fin_friends fin_credit fin_other arrival_alone arrival_with_family arrival_with_friends arrival_with_other_persons support_family_friends_in_ger married gender neg_fraud neg_sexual_harassment neg_physical_abuse neg_shipwreck neg_robbery neg_blackmail neg_prison no_neg_dummy age english french years_in_school uni_apprentice_abroad practical_uni theoretical_uni phd religion_islam religion_christianity  
+* stcox i.birth_country km car bus truck train plane ferry small_boat by_foot transportation_other cost_all_transportation_euro cost_all_accomodation_euro cost_all_helper_smuggler_euro fin_savings fin_sold_assets fin_casual_work fin_family fin_friends fin_credit fin_other arrival_alone arrival_with_family arrival_with_friends arrival_with_other_persons support_family_friends_in_ger married gender neg_fraud neg_sexual_harassment neg_physical_abuse neg_shipwreck neg_robbery neg_blackmail neg_prison no_neg_dummy age english french years_in_school uni_apprentice_abroad practical_uni theoretical_uni phd religion_islam religion_christianity  
 
-* with transport, km, smuggler, accomodation on 1000€ sclae
+* FINAL: with transport, km, smuggler, accomodation on 1000€/km scale
 
 stcox i.birth_country km1000 car bus truck train plane ferry small_boat by_foot transportation_other cost_transport_1000 cost_accomodation_1000 cost_smuggler_1000 fin_savings fin_sold_assets fin_casual_work fin_family fin_friends fin_credit fin_other arrival_alone arrival_with_family arrival_with_friends arrival_with_other_persons support_family_friends_in_ger married gender neg_fraud neg_sexual_harassment neg_physical_abuse neg_shipwreck neg_robbery neg_blackmail neg_prison no_neg_dummy age english french years_in_school uni_apprentice_abroad practical_uni theoretical_uni phd religion_islam religion_christianity  
-
 
 * check for violations of the PH assumption
 
@@ -1732,22 +1732,22 @@ stcox i.birth_country km car bus truck train plane ferry small_boat by_foot tran
 
 stcox i.birth_country km1000 car bus truck train plane ferry small_boat by_foot transportation_other cost_transport_1000 cost_accomodation_1000 cost_smuggler_1000 fin_savings fin_sold_assets fin_casual_work fin_family fin_friends fin_credit fin_other arrival_alone arrival_with_family arrival_with_friends arrival_with_other_persons support_family_friends_in_ger married gender neg_fraud neg_sexual_harassment neg_physical_abuse neg_shipwreck neg_robbery neg_blackmail neg_prison no_neg_dummy age english french years_in_school uni_apprentice_abroad practical_uni theoretical_uni phd religion_islam religion_christianity, tvc(country6 car train by_foot cost_transport_1000)  
 
+/* Likelihood ratio test
 
-/* Lilelihood ratio test
-
-The standard way to use lrtest is to do the following:
+The standard way to use lrtest is the following:
 1. Fit either the restricted model or the unrestricted model 
 by using one of Stata’s estimation commands and then store the results using estimates 
-store name.
+store 'name'.
 2. Fit the alternative model (the unrestricted or restricted model) and then type 
-‘lrtest name .’. lrtest determines for itself which of the two models is the restricted 
-model by comparing the degrees of freedom.
-*/
+‘lrtest name .’. lrtest determines for itself which of the two models is the 
+restricted model by comparing the degrees of freedom. */
 
 estimates store no_tvc
 
 lrtest no_tvc
 
+* ATTENTION: The following commands will delete data from the dataset. It is highly 
+* advisable to do these operations on copies of the data prepared for this purpose.
 
 * Check the consistency of conclusions by specifying additional models:
 *`1) Excluding top outliers
@@ -1756,15 +1756,13 @@ lrtest no_tvc
 
 sum dur, d
 drop if dur > 160
-
 * 129 observations deleted
 
 stcox i.birth_country km car bus truck train plane ferry small_boat by_foot transportation_other cost_all_transportation_euro cost_all_accomodation_euro cost_all_helper_smuggler_euro fin_savings fin_sold_assets fin_casual_work fin_family fin_friends fin_credit fin_other arrival_alone arrival_with_family arrival_with_friends arrival_with_other_persons support_family_friends_in_ger married gender neg_fraud neg_sexual_harassment neg_physical_abuse neg_shipwreck neg_robbery neg_blackmail neg_prison no_neg_dummy age english french years_in_school uni_apprentice_abroad practical_uni theoretical_uni phd religion_islam religion_christianity  
 
 outreg2 using regression_results, eform append excel dec(3) 
 
-
-* 2) Excluding 5% of overall outliers, then keeping check geographical conclusions for Syrians 
+* 2) Excluding 5% of overall outliers, then check geographical conclusions for Syrians 
 
 drop if dur > 160
 
