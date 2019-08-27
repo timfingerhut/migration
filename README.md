@@ -6,9 +6,9 @@ If you have any questions or would like to read my thesis, please send me an ema
 
 What you can and cannot find here: 
 
-1) **Data**: Contractual obligations with the German Institute for Economic Research (DIW) stipulate that it is not allowed to share the data from the IAB-BAMF-SOEP Survey of Refugees in Germany. If you want to work with the same dataset, you can apply for access through the [DIW/SOEP website](https://www.diw.de/en/diw_01.c.357906.en/soep_order_form_mod.html). 
+1) **Data**: Due to contractual obligations with the German Institute for Economic Research (DIW), I am not allowed to share the data from the IAB-BAMF-SOEP Survey of Refugees in Germany. If you want to work with the same dataset, you can apply for access through the [DIW/SOEP website](https://www.diw.de/en/diw_01.c.357906.en/soep_order_form_mod.html). 
 
-2) **Figures**: This path contains all figures that are part of the thesis in high resolution.
+2) **Figures**: This path contains all figures in high resolution.
 
 3) **DeepSurv**: You can find the Python notebook used for the DeepSurv application on this path. I also uploaded the PDF output for convenience. 
 
@@ -16,4 +16,4 @@ What you can and cannot find here:
 
 5) **Map Data**: I created Map 1 using [Heatmapper](http://www2.heatmapper.ca). I uploaded the raw data of the number of Syrian respondents by region to the Map Data folder. 
 
-6) **STATA Code**: This path contains the STATA Do-File. It contains the relevant code for Kaplan-Meier estimates, Cox regressions, data preprocessing and normalization as well as the various statistical tests implemented in the thesis.
+6) **STATA Code**: This path contains the STATA Do-File with the code for Kaplan-Meier estimates, Cox regressions, data preprocessing and normalization as well as the various statistical tests implemented in the thesis.
