@@ -1,10 +1,10 @@
-Welcome! This repository contains documents related to my Master Thesis with the title: 
+Welcome! This repository contains documents related to my Master Thesis: 
 
 *"Models of Migration Time and Refugee Well-being - Applying Causal Inference, Event History Analysis and Deep Learning to the IAB-BAMF-SOEP Survey of Refugees in Germany"*. 
 
 If you have any questions or would like to read my thesis, please send me an email: timfingerhut@gmail.com. 
 
-Let me summarize what you can and cannot find here: 
+What you can and cannot find here: 
 
 1) **Data**: Contractual obligations with the German Institute for Economic Research (DIW) stipulate that it is not allowed to share the data from the IAB-BAMF-SOEP Survey of Refugees in Germany. If you want to work with the same dataset, you can apply for access through the [DIW/SOEP website](https://www.diw.de/en/diw_01.c.357906.en/soep_order_form_mod.html). 
 
